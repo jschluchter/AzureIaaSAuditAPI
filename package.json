@@ -1,0 +1,21 @@
+{
+  "name": "AzureIaaSAuditAPI",
+  "version": "1.0.0",
+  "description": "API to Audit an Azure IaaS Subscription",
+  "main": "server.js",
+  "dependencies": {
+    "async": "^2.3.0",
+    "azure-arm-network": "^1.0.0-preview",
+    "azure-arm-resource": "^2.0.0-preview",
+    "azure-common": "^0.9.19",
+    "ms-rest": "^2.1.0",
+    "ms-rest-azure": "^2.1.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Brian C Harrison",
+  "license": "ISC"
+}
