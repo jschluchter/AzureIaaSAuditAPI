@@ -23,7 +23,7 @@ rest.loginWithServicePrincipalSecret(appid, appkey, tenant,
             rmClient.resourceGroups.list(function(err, groups) {
                 if (err) throw err;
                 else {
-                    async.eachSeries(groups, function(group, callback) {
+                    async.eachSeries(groups, function(group, groupCallback) {
                         // Loop through all of the Resource Groups within the given Sub and Tenant
                         rg = new RGEntity(group.id, group.name, subid, tenant);
                         var networkClient = new NetworkManagementClient(credentials, subid);
@@ -31,41 +31,48 @@ rest.loginWithServicePrincipalSecret(appid, appkey, tenant,
                             if (err) throw err;
                             else {
                                 // Loop through all of the Networks within the given Resource Group
-                                async.eachSeries(networks, function(vnet, callback) {
+                                async.eachSeries(networks, function(vnet, vnetCallback) {
                                     var vnetEntity = new NetworkEntity(vnet.id, vnet.name, vnet.location);
                                     vnet.addressSpace.addressPrefixes.forEach(function(cidr, index) {
                                         vnetEntity.CIDRs.push(cidr);
                                     });
 
                                     // Loop through all of the Subnets within the given Network
-                                    async.eachSeries(vnet.subnets, function(subnet, callback) {
-                                        var nsgNameIndex = subnet.networkSecurityGroup.id.indexOf('networkSecurityGroups/');
-                                        var nsgName = subnet.networkSecurityGroup.id.substring(nsgNameIndex + 22);
-                                        var subnetEntity = new SubnetEntity(subnet.name, subnet.addressPrefix, nsgName);
+                                    async.eachSeries(vnet.subnets, function(subnet, subnetCallback) {
+                                        var subnetEntity = null;
+                                        if (subnet.networkSecurityGroup === undefined) {
+                                            subnetEntity = new SubnetEntity(subnet.name, subnet.addressPrefix, '');
+                                        } else {
+                                            var nsgNameIndex = subnet.networkSecurityGroup.id.indexOf('networkSecurityGroups/');
+                                            var nsgName = subnet.networkSecurityGroup.id.substring(nsgNameIndex + 22);
+                                            var subnetEntity = new SubnetEntity(subnet.name, subnet.addressPrefix, nsgName);
 
-                                        // Need to get the NSG for the Subnet based on the Name
-                                        networkClient.networkSecurityGroups.get(rg.RGName, nsgName, function(err, nsg) {
-                                            if (err) {
-                                                console.log('Error retrieving Network Security Group', nsgName);
-                                                throw err;
-                                            } else {
-                                                // Loop through the Rules for the given NSG
-                                                async.eachSeries(nsg.securityRules, function(rule, callback) {
-                                                    var ruleEntity = new NSGRuleEntity(rule.name, rule.access, rule.protocol,
-                                                        rule.destinationAddressPrefix, rule.destinationPortRange,
-                                                        rule.sourceAddressPrefix, rule.sourcePortRange, rule.priority, rule.direction);
-                                                    console.log('NSG Rule: ', ruleEntity);
-                                                    subnetEntity.NSGRules.push(ruleEntity);
-                                                }, function(err) {
-                                                    if (err) {
-                                                        console.log('Error retrieving NSG Rules');
-                                                        throw err;
-                                                    }
-                                                });
-                                            }
-                                        });
+                                            // Need to get the NSG for the Subnet based on the Name
+                                            networkClient.networkSecurityGroups.get(rg.RGName, nsgName, function(err, nsg) {
+                                                if (err) {
+                                                    console.log('Error retrieving Network Security Group', nsgName);
+                                                    throw err;
+                                                } else {
+                                                    // Loop through the Rules for the given NSG
+                                                    async.eachSeries(nsg.securityRules, function(rule, ruleCallback) {
+                                                        var ruleEntity = new NSGRuleEntity(rule.name, rule.access, rule.protocol,
+                                                            rule.destinationAddressPrefix, rule.destinationPortRange,
+                                                            rule.sourceAddressPrefix, rule.sourcePortRange, rule.priority, rule.direction);
+                                                        console.log('NSG Rule: ', ruleEntity);
+                                                        subnetEntity.NSGRules.push(ruleEntity);
+                                                        ruleCallback();
+                                                    }, function(err) {
+                                                        if (err) {
+                                                            console.log('Error retrieving NSG Rules');
+                                                            throw err;
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
                                         console.log('Subnet: ', subnetEntity)
                                         vnetEntity.Subnets.push(subnetEntity);
+                                        subnetCallback();
                                     }, function(err) {
                                         if (err) {
                                             console.log('Error looping through the Network Subnets');
@@ -74,6 +81,7 @@ rest.loginWithServicePrincipalSecret(appid, appkey, tenant,
                                     });
                                     console.log('VNet: ', vnetEntity);
                                     rg.Networks.push(vnetEntity);
+                                    vnetCallback();
                                 }, function(err) {
                                     if (err) {
                                         console.log('Error looping through the Networks');
@@ -82,6 +90,7 @@ rest.loginWithServicePrincipalSecret(appid, appkey, tenant,
                                 });
                             }
                         });
+                        groupCallback();
                     }, function(err) {
                         if (err) {
                             console.log('Error looping through Resource Groups');
