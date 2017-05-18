@@ -9,7 +9,8 @@
     "azure-arm-resource": "^2.0.0-preview",
     "azure-common": "^0.9.19",
     "ms-rest": "^2.1.0",
-    "ms-rest-azure": "^2.1.1"
+    "ms-rest-azure": "^2.1.1",
+    "node-cache": "^4.1.1"
   },
   "devDependencies": {},
   "scripts": {
