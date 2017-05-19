@@ -11,10 +11,10 @@ var VirtualNetwork = require('./entities/network.js');
 var arm = require('azure-arm-resource');
 var armnetwork = require('azure-arm-network');
 
-var appid = '1fe26dcf-39d9-4ba4-a138-1176496b658a';
-var appkey = 'VE7wv8tCzasGmNrJ6SwAxykNOQncESy165tGca+XPZU=';
-var tenant = 'feb0106c-50ef-4b39-8714-da9589109fcf';
-var subid = '3a1ad284-92e6-4b05-b32c-e96edf011ed4';
+var appid = '|||';
+var appkey = '|||';
+var tenant = '|||';
+var subid = '|||';
 
 var armclient;
 var armnetworkclient;
